@@ -96,9 +96,47 @@ public class BoardDAO {
         }
     }
 
-    //상세보기
+    //상세보기 (메모리상의 boardList 사용했기 때문에 필요 없었다)
 
     //등록
+    public void insert(Board board) throws  BoardUpdateException{
+        String uri = "/board";
+        BufferedWriter buffw = null;    //서버에 보낼 것이므로
+
+        try {
+            URL url = new URL("http://"+ip+":"+port+uri);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("POST");
+            con.setRequestProperty("Content-Type","application/json;charset=utf-8");
+            con.setDoOutput(true);
+
+            //보낼 데이터 구성
+            buffw = new BufferedWriter(new OutputStreamWriter(con.getOutputStream(), "UTF-8"));
+
+            //자바 -> json으로... : Gson
+            String jsonString = gson.toJson(board);
+
+            buffw.write(jsonString);
+            buffw.flush();
+            int code = con.getResponseCode();
+            if(code !=200){
+                throw new BoardUpdateException("등록실패");
+            }
+            mainActivity.registDialog.dismiss();    //창닫기 추가
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+            if(buffw!=null){
+                try {
+                    buffw.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 
     //수정
     public void edit(Board board) throws BoardUpdateException{
@@ -126,7 +164,11 @@ public class BoardDAO {
             SocketMessage socketMessage = new SocketMessage();
             socketMessage.setRequestCode("update"); //CRUD 중 update
             socketMessage.data=jsonString;
-            mainActivity.myWebSocketClient.sendMsg(socketMessage);
+            mainActivity.myWebSocketClient.sendMsg(socketMessage);  //쓰레드로 가능한가? 아니면 핸들러로 부탁한다
+
+            //다이얼로그 창 닫기!
+            mainActivity.detailDialog.dismiss();
+
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -144,7 +186,23 @@ public class BoardDAO {
     }
 
     //삭제
-    public void del(){
+    public void del(int board_id) throws BoardUpdateException{
+        String uri = "/board/"+board_id;    //RESTFul 준수하자!
+
+        try {
+            URL url = new URL("http://"+ip+":"+port+uri);
+            HttpURLConnection con = (HttpURLConnection)url.openConnection();
+            con.setRequestMethod("DELETE");
+            int code = con.getResponseCode();  //요청 및 응답이 발생
+            if(code !=200){
+                throw new BoardUpdateException("삭제 실패");
+            }
+            mainActivity.detailDialog.dismiss();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 }

@@ -67,7 +67,16 @@ public class DetailDialog extends Dialog {
         thread.start();
     }
     public void del(){
-        MainActivity mainActivity = (MainActivity) this.getContext();
-        mainActivity.boardDAO.del();
+        Thread thread = new Thread(){
+            public void run() {
+                try {
+                    mainActivity.boardDAO.del(board_id);//한건 삭제 요청 board_id 가 필요(상세보기할때 이미 들어와 있음)
+                }catch(BoardUpdateException e){
+                    //유저들에게 에러 UI를 보여주자!!
+                    e.printStackTrace();
+                }
+            }
+        };
+        thread.start();
     }
 }
